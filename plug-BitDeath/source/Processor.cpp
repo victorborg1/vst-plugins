@@ -29,6 +29,11 @@ tresult PLUGIN_API Processor::initialize(FUnknown* context) {
 tresult PLUGIN_API Processor::terminate()        { return AudioEffect::terminate(); }
 tresult PLUGIN_API Processor::setActive(TBool s) { return AudioEffect::setActive(s); }
 
+uint32 PLUGIN_API Processor::getProcessContextRequirements() {
+    return Vst::IProcessContextRequirements::kNeedTempo
+         | Vst::IProcessContextRequirements::kNeedProjectTimeMusic;
+}
+
 tresult PLUGIN_API Processor::setupProcessing(Vst::ProcessSetup& newSetup) {
     tresult r = AudioEffect::setupProcessing(newSetup);
     sampleRate = newSetup.sampleRate;
@@ -55,10 +60,12 @@ float Processor::denorm(ParamID id) const {
 
 void Processor::buildParams() {
     // downsample factor
-    float targetRate = denorm(kParamDownsample);
-    int step = std::max(1, static_cast<int>(std::round(sampleRate / targetRate)));
-    m_downsamplerL.setStep(step);
-    m_downsamplerR.setStep(step);
+    if (!m_randActive) {
+        float targetRate = denorm(kParamDownsample);
+        int step = std::max(1, static_cast<int>(std::round(sampleRate / targetRate)));
+        m_downsamplerL.setStep(step);
+        m_downsamplerR.setStep(step);
+    }
 
     // bit depth
     float targetBits = denorm(kParamBitDepth);
@@ -67,8 +74,21 @@ void Processor::buildParams() {
     // mix
     float targetMix = denorm(kParamMix);
     m_mixSmoother.setTarget(targetMix);
+
+    m_randActive = (m_paramValues[kParamRandomize] >= 0.5f);
 }
 
+float Processor::randomRate() {
+    std::uniform_int_distribution<int> dist(0, kRandRateCount - 1);
+    return kRandRates[dist(m_rng)];
+}
+
+void Processor::applyRandomRate() {
+    float rate = randomRate();
+    int step = std::max(1, static_cast<int>(std::round(sampleRate / rate)));
+    m_downsamplerL.setStep(step);
+    m_downsamplerR.setStep(step);
+}
 
 tresult PLUGIN_API Processor::setState(IBStream* state) {
     IBStreamer s(state, kLittleEndian);
@@ -108,7 +128,13 @@ tresult PLUGIN_API Processor::process(Vst::ProcessData& data) {
     }
     if (m_paramsChanged.exchange(false)) buildParams();
 
-
+    if (m_randActive) {
+        int divIdx = static_cast<int>(std::round(denorm(kParamStepDiv)));
+        m_randomizer.tick(data.processContext, divIdx, [this]() {
+            applyRandomRate();
+        });
+    }
+    
     //audio inpuut
     float* inL = (data.inputs  && data.inputs[0].numChannels > 0)
                   ? (float*)data.inputs[0].channelBuffers32[0] : nullptr;

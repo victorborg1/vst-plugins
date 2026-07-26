@@ -29,6 +29,8 @@ enum ParamID : Vst::ParamID
     kParamDownsample = 0,
     kParamBitDepth,
     kParamMix,
+    kParamRandomize,
+    kParamStepDiv,
     kParamCount
 };
 
@@ -51,7 +53,9 @@ inline const ParamInfo& getParamInfo(ParamID id)
     static const ParamInfo infos[] = {
         { kParamDownsample, STR16("Sample Rate"), STR16("Hz"), 0,  1.0, 1000.0, 44100.0 },
         { kParamBitDepth,   STR16("Bits"),        STR16(""),  23, 1.0,    1.0,    24.0  },
-        { kParamMix,        STR16("Mix"),         STR16(""),   0, 1.0,    0.0,     1.0  }
+        { kParamMix,        STR16("Mix"),         STR16(""),   0, 1.0,    0.0,     1.0  },
+        { kParamRandomize,  STR16("Randomize"),   STR16(""),    1,  0.0,    0.0,     1.0  },
+        { kParamStepDiv,    STR16("Step Div"),    STR16(""),    5,  toNormalized(1.0, 0.0, 5.0), 0.0, 5.0 },
     };
     return infos[id];
 }

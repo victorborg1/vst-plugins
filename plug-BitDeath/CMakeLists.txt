@@ -6,6 +6,7 @@ set(plug_sources
     source/Processor.cpp
     source/gui/Editor.cpp
     source/gui/Waveform.cpp
+    source/dsp/Tempo.cpp
 )
 
 build_vst3("${plug_sources}")
