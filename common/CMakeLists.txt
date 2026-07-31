@@ -2,9 +2,36 @@
 file(GLOB_RECURSE RED_COMMON_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/WindowManager/PlatformView_win32.cpp"
 )
+
+list(FILTER RED_COMMON_SOURCES EXCLUDE REGEX
+    "PlatformView_.*\\.(cpp|mm)$"
+)
+
+if(WIN32)
+
+    list(APPEND RED_COMMON_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/gui/WindowManager/PlatformView_win32.cpp"
+    )
+
+elseif(UNIX AND NOT APPLE)
+
+    list(APPEND RED_COMMON_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/gui/WindowManager/PlatformView_linux.cpp"
+    )
+
+elseif(APPLE)
+
+    list(APPEND RED_COMMON_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/gui/WindowManager/PlatformView_mac.mm"
+    )
+
+endif()
+
 add_library(common STATIC ${RED_COMMON_SOURCES})
+
+
+
 
 target_include_directories(common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/source
@@ -15,7 +42,7 @@ target_link_libraries(common PUBLIC
     glm
     stb
     freetype
-    resampler
+    #resampler
     sdk
 )
 
@@ -26,7 +53,13 @@ elseif(APPLE)
     target_link_libraries(common PUBLIC "-framework OpenGL")
 elseif(UNIX)
     find_package(OpenGL REQUIRED)
-    target_link_libraries(common PUBLIC OpenGL::GL)
+    find_package(X11 REQUIRED)
+    target_link_libraries(common 
+        PUBLIC 
+            OpenGL::GL
+            X11::X11
+            dl
+    )
 endif()
 
 

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "") # fix later
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project(eigendsp-plugins VERSION 1.0.0)
 
@@ -12,10 +13,10 @@ endif()
 
 
 # vst3 path. override with -DVST3_SDK_PATH=
-set(VST3_SDK_PATH "C:/SDKs/vst-sdk_3.8.0_build-66_2025-10-20/VST_SDK/vst3sdk"
+set(VST3_SDK_PATH ""
     CACHE PATH "Path to VST3 SDK")
 
-if(NOT EXISTS ${VST3_SDK_PATH})
+if(NOT EXISTS "${VST3_SDK_PATH}")
     message(FATAL_ERROR "VST3 SDK not found at: ${VST3_SDK_PATH}")
 endif()
 
@@ -23,15 +24,15 @@ option(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES "" OFF)
 option(SMTG_ENABLE_VST3_HOSTING_EXAMPLES "" OFF)
 option(SMTG_CREATE_PLUGIN_LINK "" OFF)
 option(SMTG_RUN_VST_VALIDATOR "" OFF)
-
-
-# external stuff
-add_subdirectory(external)
+set(SMTG_ENABLE_VSTGUI_SUPPORT OFF CACHE BOOL "" FORCE)
 
 
 # vst3sdk
 add_subdirectory(${VST3_SDK_PATH} ${PROJECT_BINARY_DIR}/vst3sdk)
 smtg_enable_vst3_sdk()
+
+# external stuff
+add_subdirectory(external)
 
 
 # common lib 

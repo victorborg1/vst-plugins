@@ -15,6 +15,10 @@
 #pragma comment(lib, "shlwapi.lib")
 #endif
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 namespace fs = std::filesystem;
 namespace {
     void AssetManagerModuleAnchor() {}
@@ -60,7 +64,7 @@ bool AssetManager::InitFreeType() {
     return true;
 }
 
-std::string AssetManager::FindResourcesPath() const {
+/*std::string AssetManager::FindResourcesPath() const {
 #ifdef _WIN32
     HMODULE module = nullptr;
 
@@ -87,8 +91,71 @@ std::string AssetManager::FindResourcesPath() const {
 #endif
 
     return {};
-}
+}*/
+std::string AssetManager::FindResourcesPath() const {
+#ifdef _WIN32
 
+    HMODULE module = nullptr;
+
+    if (!GetModuleHandleExA(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        reinterpret_cast<LPCSTR>(&AssetManagerModuleAnchor),
+        &module))
+    {
+        return {};
+    }
+
+    char path[MAX_PATH] = {};
+    GetModuleFileNameA(module, path, MAX_PATH);
+
+    fs::path p(path);
+
+    // .vst3/Contents/x86_64-win/plugin.dll
+    fs::path resources =
+        p.parent_path()
+        .parent_path()
+        / "res";
+
+    if (fs::exists(resources))
+        return resources.string();
+
+
+#elif defined(__linux__)
+
+    Dl_info info{};
+
+    if (dladdr(
+        reinterpret_cast<void*>(&AssetManagerModuleAnchor),
+        &info) == 0)
+    {
+        return {};
+    }
+
+
+    fs::path modulePath(info.dli_fname);
+
+    // plugin.so:
+    //
+    // plug-BitDeath.vst3/
+    //   Contents/
+    //      x86_64-linux/
+    //          plugin.so
+    //
+    fs::path resources =
+        modulePath.parent_path()
+        .parent_path()
+        / "res";
+
+
+    if (fs::exists(resources))
+        return resources.string();
+
+#endif
+
+
+    return {};
+}
 std::string AssetManager::GetShaderPath(const std::string& relativePath) const {
     fs::path p = fs::path(m_resourcesPath) / "Shaders" / relativePath;
     if (fs::exists(p)) return p.string();

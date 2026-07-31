@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include "pluginterfaces/vst/ivstplugview.h"
 #include "public.sdk/source/vst/vsteditcontroller.h"
 #include "WindowManager/PlatformView.h"
@@ -14,7 +13,9 @@ namespace oscilleon {
 namespace gui {
 
 template<typename EditorType, int WindowWidth, int WindowHeight>
-class Entry : public Steinberg::IPlugView
+class Entry
+    : public Steinberg::IPlugView
+    , public PlatformViewListener
 {
 private:
     using tresult   = Steinberg::tresult;
@@ -75,9 +76,24 @@ public:
         return r;
     }
 
-
     tresult PLUGIN_API isPlatformTypeSupported(FIDString type) override {
-        return FIDStringsEqual(type, kPlatformTypeHWND) ? kResultTrue : kResultFalse;
+#if defined(_WIN32)
+        return FIDStringsEqual(type, kPlatformTypeHWND)
+            ? kResultTrue
+            : kResultFalse;
+
+#elif defined(__linux__)
+        return FIDStringsEqual(type, kPlatformTypeX11EmbedWindowID)
+            ? kResultTrue
+            : kResultFalse;
+
+#elif defined(__APPLE__)
+        return FIDStringsEqual(type, kPlatformTypeNSView)
+            ? kResultTrue
+            : kResultFalse;
+#else
+        return kResultFalse;
+#endif
     }
 
     tresult PLUGIN_API attached(void* parent, FIDString) override {
@@ -86,14 +102,8 @@ public:
         m_platformView = CreatePlatformView();
         if (!m_platformView || !m_platformView->attach(parent))
             throw std::runtime_error("PlatformView::attach() failed");
+        m_platformView->setListener(this);
 
-
-        m_hwnd = static_cast<HWND>(m_platformView->getNativeHandle());
-        SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-        SetWindowLongPtr(m_hwnd, GWLP_WNDPROC,  reinterpret_cast<LONG_PTR>(WndProcStatic));
-        //timeBeginPeriod(1);
-        SetTimer(m_hwnd, 1, 5, nullptr);
-        
         m_platformView->resize(m_width, m_height);
         m_editor = std::make_unique<EditorType>(m_controller);
         m_editor->Init(m_width, m_height);
@@ -105,6 +115,7 @@ public:
         Render();
         return kResultOk;
     }
+
 
     tresult PLUGIN_API removed() override {
         CleanUp();
@@ -126,14 +137,16 @@ public:
 
     tresult PLUGIN_API getSize(ViewRect* size) override {
         if (!size) return kResultFalse;
-        size->left = 0;  size->top    = 0;
-        size->right = m_width; size->bottom = m_height;
+        size->left = 0;
+        size->top = 0;
+        size->right = m_width;
+        size->bottom = m_height;
         return kResultOk;
     }
 
     tresult PLUGIN_API checkSizeConstraint(ViewRect* rect) override {
         if (!rect) return kResultFalse;
-        if (rect->getWidth()  < WindowWidth)  rect->right  = rect->left + WindowWidth;
+        if (rect->getWidth() < WindowWidth)   rect->right  = rect->left + WindowWidth;
         if (rect->getHeight() < WindowHeight) rect->bottom = rect->top  + WindowHeight;
         return kResultOk;
     }
@@ -144,66 +157,74 @@ public:
     tresult PLUGIN_API onKeyDown(char16, int16, int16)         override { return kResultOk;    }
     tresult PLUGIN_API onKeyUp(char16, int16, int16)           override { return kResultOk;    }
     tresult PLUGIN_API onWheel(float)                          override { return kResultOk;    }
+    
+    // platformviewlistener
 
-    // ── Win32 message handler (runs on our child window) ──────────────────
-    LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-        switch (msg) {
-        case WM_LBUTTONDOWN:
-            SetCapture(hwnd);
-            m_editor->OnMouseDown((float)LOWORD(lParam), (float)HIWORD(lParam));
-            Render(); break;
-        case WM_LBUTTONUP:
-            m_editor->OnMouseUp((float)LOWORD(lParam), (float)HIWORD(lParam));
-            ReleaseCapture();
-            Render(); break;
-        case WM_MOUSEMOVE:
-            if (wParam & MK_LBUTTON) {
-                m_editor->OnMouseMove((float)LOWORD(lParam), (float)HIWORD(lParam));
-                Render();
-            } else if (wParam & MK_RBUTTON) {
-                m_editor->OnRightMouseMove((float)LOWORD(lParam), (float)HIWORD(lParam));
-                Render();
-            }
-            break;
+    void onMouseDown(float x,float y,bool rightButton) override {
+        if (!m_editor)
+            return;
 
-        case WM_RBUTTONDOWN:
-            SetCapture(hwnd);
-            m_editor->OnRightMouseDown((float)LOWORD(lParam), (float)HIWORD(lParam));
-            Render(); break;
+        if(rightButton)
+            m_editor->OnRightMouseDown(x,y);
+        else
+            m_editor->OnMouseDown(x,y);
 
-        case WM_RBUTTONUP:
-            m_editor->OnRightMouseUp((float)LOWORD(lParam), (float)HIWORD(lParam));
-            ReleaseCapture();
-            Render(); break;
-
-        case WM_CAPTURECHANGED:
-            if (m_editor) m_editor->CancelDrag();
-            Render();
-            return 0;
-            
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            BeginPaint(hwnd, &ps);
-            Render();
-            EndPaint(hwnd, &ps);
-            return 0;
-        }
-        case WM_TIMER:
-            m_editor->UpdateWidgets(0.005f);
-            Render();
-            return 0;
-        case WM_ERASEBKGND:
-            return 1;
-        }
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        Render();
     }
+
+
+    void onMouseUp(float x,float y,bool rightButton) override {
+        if (!m_editor)
+            return;
+
+        if(rightButton)
+            m_editor->OnRightMouseUp(x,y);
+        else
+            m_editor->OnMouseUp(x,y);
+
+        Render();
+    }
+
+    void onMouseMove(float x, float y, bool leftDown, bool rightDown) override {
+        if (!m_editor)
+            return;
+
+        if (leftDown)
+        {
+            m_editor->OnMouseMove(x, y);
+            Render();
+        }
+        else if (rightDown)
+        {
+            m_editor->OnRightMouseMove(x, y);
+            Render();
+        }
+    }
+
+
+    void onCancelDrag() override {
+        if (m_editor)
+            m_editor->CancelDrag();
+
+        Render();
+    }
+
+
+    void onUpdate(float dt) override {
+        if (m_editor)
+        {
+            m_editor->UpdateWidgets(dt);
+            Render();
+        }
+    }
+
+
+    void onRenderRequested() override {
+        Render();
+    }
+
 
 private:
-    static LRESULT CALLBACK WndProcStatic(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-        auto* self = reinterpret_cast<Entry*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        return self ? self->WndProc(hwnd, msg, wParam, lParam)
-                    : DefWindowProc(hwnd, msg, wParam, lParam);
-    }
 
     void Render() {
         if (!m_platformView || !m_editor) return;
@@ -214,14 +235,9 @@ private:
 
 
     void CleanUp() {
-        if (m_hwnd) {
-            KillTimer(m_hwnd, 1);
 
-            SetWindowLongPtr(m_hwnd, GWLP_USERDATA, 0);
-            m_hwnd = nullptr;
-        }
         if (m_platformView) {
-
+            m_platformView->setListener(nullptr);
             m_platformView->makeCurrent();
             m_editor.reset();
 
@@ -231,10 +247,10 @@ private:
         }
     }
 
+private:
     int m_width { WindowWidth  };
     int m_height{ WindowHeight };
 
-    HWND                            m_hwnd         = nullptr;
     PlatformView*                   m_platformView = nullptr;
     Vst::EditController*            m_controller   = nullptr;
     IPlugFrame*                     m_frame        = nullptr;

@@ -60,7 +60,7 @@ endif()
 
 
 # de Soras
-file(GLOB RESAMPLER_SOURCES resampler/*.cpp)
+#file(GLOB RESAMPLER_SOURCES resampler/*.cpp)
 
-add_library(resampler STATIC ${RESAMPLER_SOURCES})
-target_include_directories(resampler PUBLIC resampler)
+#add_library(resampler STATIC ${RESAMPLER_SOURCES})
+#target_include_directories(resampler PUBLIC resampler)

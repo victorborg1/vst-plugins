@@ -6,8 +6,8 @@ endfunction()
 function(build_vst3 plug_sources)
     red_get_plugin_name(PLUGIN_NAME)
     set(target ${PLUGIN_NAME})
-    message(STATUS "Resources source: ${CMAKE_CURRENT_SOURCE_DIR}/Resources")
-    message(STATUS "Resources dest: ${CMAKE_CURRENT_BINARY_DIR}/VST3/Debug/${PLUGIN_NAME}.vst3/Contents/Resources")
+    message(STATUS "res source: ${CMAKE_CURRENT_SOURCE_DIR}/res")
+    message(STATUS "res dest: ${CMAKE_BINARY_DIR}/VST3/$<CONFIG>/${PLUGIN_NAME}.vst3/Contents/res")
     smtg_add_vst3plugin(${target} ${plug_sources})
 
     file(GLOB_RECURSE plug_headers
@@ -49,22 +49,6 @@ function(build_vst3 plug_sources)
             target_sources(${target} PRIVATE resource/win32.rc)
         endif()
 
-        # copy res from plugin
-        add_custom_command(TARGET ${target} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_CURRENT_SOURCE_DIR}/res"
-                "${CMAKE_BINARY_DIR}/VST3/$<CONFIG>/${PLUGIN_NAME}.vst3/Contents/res"
-            COMMENT "Copying res to VST3 bundle"
-        )
-
-        # copy res from common
-        add_custom_command(TARGET ${target} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_SOURCE_DIR}/common/res"
-                "${CMAKE_BINARY_DIR}/VST3/$<CONFIG>/${PLUGIN_NAME}.vst3/Contents/res"
-            COMMENT "Copying common res to VST3 bundle"
-        )
-
         if(MSVC)
             smtg_target_set_debug_executable(${target}
                 "$(ProgramW6432)/Steinberg/VST3PluginTestHost/VST3PluginTestHost.exe"
@@ -72,6 +56,23 @@ function(build_vst3 plug_sources)
             )
         endif()
     endif()
+
+    # copy res from plugin
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res")
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/res"
+                "${CMAKE_BINARY_DIR}/VST3/$<CONFIG>/${PLUGIN_NAME}.vst3/Contents/res"
+            COMMENT "Copying res to VST3 bundle"
+        )
+    endif()
+    # copy res from common
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/common/res"
+            "${CMAKE_BINARY_DIR}/VST3/$<CONFIG>/${PLUGIN_NAME}.vst3/Contents/res"
+        COMMENT "Copying common res to VST3 bundle"
+    )
 
     source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}/source
