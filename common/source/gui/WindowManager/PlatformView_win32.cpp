@@ -44,16 +44,15 @@ public:
             reinterpret_cast<LONG_PTR>(this)
         );
 
-        oldWndProc =
-            reinterpret_cast<WNDPROC>(
-                SetWindowLongPtr(
-                    hwnd,
-                    GWLP_WNDPROC,
-                    reinterpret_cast<LONG_PTR>(WndProcStatic)
-                )
-            );
 
-        SetTimer(hwnd, 1, 5, nullptr);
+        SetWindowLongPtr(
+            hwnd,
+            GWLP_WNDPROC,
+            reinterpret_cast<LONG_PTR>(WndProcStatic)
+        );
+
+
+
 
         hdc = GetDC(hwnd);
         if (!hdc) return false;
@@ -97,6 +96,8 @@ public:
                 "gladLoadGL failed"
             );
 
+
+        SetTimer(hwnd, 1, 5, nullptr);
         return true;
     }
 
@@ -104,8 +105,7 @@ public:
 
     void detach() override
     {
-
-        if(hwnd) KillTimer(hwnd,1);
+        if(hwnd) KillTimer(hwnd, 1);
 
         wglMakeCurrent(
             nullptr,
@@ -114,17 +114,23 @@ public:
 
         if(hglrc) {
             wglDeleteContext(hglrc);
-            hglrc=nullptr;
+            hglrc = nullptr;
         }
 
         if(hdc) {
-            ReleaseDC(hwnd,hdc);
-            hdc=nullptr;
+            ReleaseDC(hwnd, hdc);
+            hdc = nullptr;
         }
 
         if(hwnd) {
+            SetWindowLongPtr(
+                hwnd,
+                GWLP_USERDATA,
+                0
+            );
+
             DestroyWindow(hwnd);
-            hwnd=nullptr;
+            hwnd = nullptr;
         }
     }
 
@@ -231,11 +237,12 @@ private:
 
 
         case WM_LBUTTONDOWN:
-
+            SetCapture(hwnd);
             if(listener)
                 listener->onMouseDown(
-                    LOWORD(lParam),
-                    HIWORD(lParam)
+                    (float)LOWORD(lParam),
+                    (float)HIWORD(lParam),
+                    false
                 );
 
             return 0;
@@ -244,32 +251,38 @@ private:
 
             if(listener)
                 listener->onMouseUp(
-                    LOWORD(lParam),
-                    HIWORD(lParam)
+                    (float)LOWORD(lParam),
+                    (float)HIWORD(lParam),
+                    false
                 );
-
+            ReleaseCapture();
             return 0;
 
         case WM_MOUSEMOVE:
 
             if(listener)
             {
-                listener->onMouseMove(
-                    LOWORD(lParam),
-                    HIWORD(lParam),
-                    wParam & MK_LBUTTON,
-                    wParam & MK_RBUTTON
-                );
+                bool left = wParam & MK_LBUTTON;
+                bool right = wParam & MK_RBUTTON;
+
+                if(left || right)
+                    listener->onMouseMove(
+                        (float)LOWORD(lParam),
+                        (float)HIWORD(lParam),
+                        left,
+                        right
+                    );
             }
 
             return 0;
 
         case WM_RBUTTONDOWN:
-
+            SetCapture(hwnd);
             if(listener)
                 listener->onMouseDown(
-                    LOWORD(lParam),
-                    HIWORD(lParam)
+                    (float)LOWORD(lParam),
+                    (float)HIWORD(lParam),
+                    true
                 );
 
             return 0;
@@ -278,10 +291,11 @@ private:
 
             if(listener)
                 listener->onMouseUp(
-                    LOWORD(lParam),
-                    HIWORD(lParam)
+                    (float)LOWORD(lParam),
+                    (float)HIWORD(lParam),
+                    true
                 );
-
+            ReleaseCapture();
             return 0;
 
         case WM_CAPTURECHANGED:
@@ -306,8 +320,7 @@ private:
 
         }
 
-        return CallWindowProc(
-            oldWndProc,
+        return DefWindowProc(
             hwnd,
             msg,
             wParam,
@@ -323,7 +336,6 @@ private:
     HWND hwndParent = nullptr;
     HDC hdc = nullptr;
     HGLRC hglrc = nullptr;
-    WNDPROC oldWndProc = nullptr;
     PlatformViewListener* listener = nullptr;
 
 };

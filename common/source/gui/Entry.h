@@ -104,10 +104,11 @@ public:
             throw std::runtime_error("PlatformView::attach() failed");
         m_platformView->setListener(this);
 
-        m_platformView->resize(m_width, m_height);
+        
         m_editor = std::make_unique<EditorType>(m_controller);
         m_editor->Init(m_width, m_height);
-
+        m_platformView->resize(m_width, m_height);
+        
         if (m_frame) {
             ViewRect vr{ 0, 0, m_width, m_height };
             m_frame->resizeView(this, &vr);
