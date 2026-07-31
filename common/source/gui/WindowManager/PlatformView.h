@@ -1,7 +1,5 @@
 #pragma once
-
 namespace Steinberg::oscilleon::gui  {
-
 class PlatformViewListener {
 public:
     virtual ~PlatformViewListener() = default;
@@ -10,9 +8,7 @@ public:
     virtual void onMouseMove(float x, float y, bool leftDown, bool rightDown) = 0;
     virtual void onCancelDrag() = 0;
     virtual void onUpdate(float dt) = 0;
-    virtual void onRenderRequested() = 0;
 };
-
 class PlatformView {
 public:
     virtual ~PlatformView() = default;
@@ -23,8 +19,10 @@ public:
     virtual void resize(int w, int h) = 0;
     virtual void* getNativeHandle() = 0;
     virtual void setListener(PlatformViewListener* listener) = 0;
+    virtual void startRendering() = 0;
+    virtual void stopRendering() = 0;
+    virtual int  getPollDescriptor() { return -1; }
+    virtual void processEvents() {}
 };
-
 PlatformView* CreatePlatformView();
-
 } // namespace Steinberg::oscilleon::gui

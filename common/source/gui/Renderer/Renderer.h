@@ -116,8 +116,7 @@ private:
     std::unique_ptr<Mesh> m_screenQuad;
     u32 m_pingpongFBO[2];
     u32 m_pingpongTex[2];
-
-
+    v4  m_clearColor;
 };
 
 }

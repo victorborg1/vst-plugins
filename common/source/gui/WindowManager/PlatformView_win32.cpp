@@ -34,8 +34,7 @@ public:
             nullptr
         );
 
-        if (!hwnd)
-            return false;
+        if (!hwnd) return false;
 
 
         SetWindowLongPtr(
@@ -44,20 +43,14 @@ public:
             reinterpret_cast<LONG_PTR>(this)
         );
 
-
         SetWindowLongPtr(
             hwnd,
             GWLP_WNDPROC,
             reinterpret_cast<LONG_PTR>(WndProcStatic)
         );
 
-
-
-
         hdc = GetDC(hwnd);
         if (!hdc) return false;
-
-
 
         PIXELFORMATDESCRIPTOR pfd{};
 
@@ -97,14 +90,10 @@ public:
             );
 
 
-        SetTimer(hwnd, 1, 5, nullptr);
         return true;
     }
 
-
-
-    void detach() override
-    {
+    void detach() override {
         if(hwnd) KillTimer(hwnd, 1);
 
         wglMakeCurrent(
@@ -134,8 +123,6 @@ public:
         }
     }
 
-
-
     void makeCurrent() override {
         wglMakeCurrent(
             hdc,
@@ -143,13 +130,9 @@ public:
         );
     }
 
-
-
     void swapBuffers() override {
         SwapBuffers(hdc);
     }
-
-
 
     void resize(int w, int h) override {
         SetWindowPos(
@@ -164,13 +147,7 @@ public:
         );
 
         makeCurrent();
-
-        glViewport(
-            0,
-            0,
-            w,
-            h
-        );
+        glViewport(0,0,w,h);
     }
 
 
@@ -179,13 +156,18 @@ public:
         return hwnd;
     }
 
-
-
     void setListener(
         PlatformViewListener* l) override {
         listener = l;
     }
 
+    void startRendering() override {
+        SetTimer(hwnd, 1, 6, nullptr);
+    }
+
+    void stopRendering() override {
+        KillTimer(hwnd, 1);
+    }
 
 
 private:

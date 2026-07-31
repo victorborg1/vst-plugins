@@ -5,10 +5,11 @@
 
 cmake -B build \
     -G "Unix Makefiles" \
-    -DVST3_SDK_PATH="$HOME/SDKs/vst3sdk" \
+    -DVST3_SDK_PATH="$HOME/SDKs/VST_SDK/vst3sdk" \
     -DCMAKE_BUILD_TYPE=Release
 
 cmake --build build
+
 
 ## Windows
 

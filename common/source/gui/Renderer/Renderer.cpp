@@ -208,6 +208,7 @@ namespace oscilleon::gui {
         ResizeFBOs();
     }
 
+/*
     void Renderer::BeginFrame(const v4& clearColor) {
         //glBindFramebuffer(GL_FRAMEBUFFER, 0);
         //glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
@@ -269,6 +270,80 @@ namespace oscilleon::gui {
 
         screenShader->Unbind();
     }
+*/
+
+void Renderer::BeginFrame(const v4& clearColor) {
+    // Store clear color for later
+    m_clearColor = clearColor;
+    
+    // Render to HDR FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFBO);
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::EndFrame() {
+    bool horizontal = true;
+    bool firstPass = true;
+    int blurPasses = 6;
+
+    auto* blurShader = GetShader("blur");
+    if (!blurShader) return;
+    
+    blurShader->Bind();
+
+    glViewport(0, 0, m_width / 2, m_height / 2);
+    for (int i = 0; i < blurPasses; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, m_pingpongFBO[horizontal]);
+        blurShader->SetBool("uHorizontal", horizontal);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(
+            GL_TEXTURE_2D,
+            firstPass ? m_emissiveTex : m_pingpongTex[!horizontal]
+        );
+        blurShader->SetInt("uImage", 0);
+
+        m_screenQuad->Draw();
+
+        horizontal = !horizontal;
+        if (firstPass) firstPass = false;
+    }
+
+    blurShader->Unbind();
+
+    // NOW composite to the DEFAULT framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, m_width, m_height);
+    glClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    auto* screenShader = GetShader("screen");
+    if (!screenShader) return;
+    
+    screenShader->Bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_colorTex);
+    screenShader->SetInt("uScene", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_pingpongTex[!horizontal]);
+    screenShader->SetInt("uBloom", 1);
+
+    screenShader->SetFloat("uBloomStrength", 0.2f);
+
+    m_screenQuad->Draw();
+
+    screenShader->Unbind();
+    
+    // IMPORTANT: Rebind HDR FBO for the next BeginFrame
+    glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFBO);
+}
+
+
+
+
 
     void Renderer::DrawMesh(const Mesh& mesh, Shader* shader) {
         DrawMeshHelper(mesh, shader, m4(1.0f));
