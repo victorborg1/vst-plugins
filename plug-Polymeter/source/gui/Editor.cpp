@@ -26,9 +26,9 @@ void Editor::Init(int width, int height) {
 
     m_assetManager = std::make_unique<AssetManager>();
     m_assetManager->Init();
-    m_assetManager->LoadFont("Aldrich.ttf", "Toolbar", 80);
-    m_assetManager->LoadFont("Aldrich.ttf", "Widgets", 20);
-    m_assetManager->LoadFont("Aldrich.ttf", "Labels", 45);
+    m_assetManager->LoadFont("jb-default.ttf", "Toolbar", 80);
+    m_assetManager->LoadFont("jb-default.ttf", "Widgets", 20);
+    m_assetManager->LoadFont("jb-default.ttf", "Labels", 45);
 
     m_renderer = std::make_unique<Renderer>();
     m_renderer->SetAssetManager(m_assetManager.get());
