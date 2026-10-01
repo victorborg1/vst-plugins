@@ -1,4 +1,3 @@
-// ArpGrid.cpp
 #include "ArpGrid.h"
 
 #include <algorithm>

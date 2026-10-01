@@ -8,7 +8,7 @@ namespace oscilleon::gui {
  
 struct VisualGrain {
     float bufferPosNorm = 0.f;
-    float rate          = 1.f;   // normalised buffer advance per second (neg = reversed)
+    float rate          = 1.f;   /// negative is reversed
     float age           = 0.f;
     float duration      = 0.f;
     float pan           = 0.f;
@@ -38,7 +38,6 @@ public:
     void SetFreeze(bool freeze);
     void NotifyBufferCleared();
  
-    // writePos is in [0, kWaveSteps) bin space, matching kWaveDisplayPoints in the processor
     void SetWaveformData(const float* L, const float* R,
                          uint32_t count, float bufferSizeSec, uint32_t writePos);
  
@@ -60,7 +59,6 @@ private:
         return v < 0.f ? v + 1.f : v;
     }
  
-    // Shortest signed arc on [0,1) circle, result in [-0.5, 0.5]
     static float CircleDiff(float target, float current) {
         float d = target - current;
         if (d >  0.5f) d -= 1.f;
@@ -71,13 +69,9 @@ private:
     float m_grainSizeMs  = 100.f;
     float m_density      = 8.f;
  
-    float m_targetPosition = 0.f;   // raw value from SetPosition()
-    float m_smoothPosition = 0.f;   // lerped in Update(), used for rendering
+    float m_targetPosition = 0.f;
+    float m_smoothPosition = 0.f;   
  
-    // Scan offset advances continuously every frame.
-    //   m_increment > 0  → scan head moves RIGHT → LEFT  (deeper into the past)
-    //   m_increment < 0  → scan head moves LEFT  → RIGHT (toward the write head)
-    //   m_increment = 0  → stationary
     float m_scanOffset  = 0.f;
     float m_increment   = 0.f;
  
@@ -98,11 +92,6 @@ private:
     float m_waveL[kWaveSteps]{};
     float m_waveR[kWaveSteps]{};
  
-    // Write head:
-    //   m_targetWritePosNorm  — ground truth from the processor, updated ~every 93 ms
-    //   m_smoothWritePosNorm  — fast lerp toward target; used for both the line AND
-    //                           the waveform age so they are always in perfect sync.
-    //                           No dead-reckoning so the head never overshoots fresh data.
     float m_smoothWritePosNorm   = 0.f;
     float m_targetWritePosNorm   = 0.f;
     bool  m_writeHeadInitialised = false;

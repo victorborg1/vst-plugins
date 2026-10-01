@@ -94,4 +94,4 @@ void Lfo::OnMouseDown(float x, float y) {
     CurveView::OnMouseDown(x, y);
 }
 
-} // namespace oscilleon::gui
+}
