@@ -47,15 +47,14 @@ float Lamp::GlowForState() const
 
 void Lamp::Render(Renderer& renderer)
 {
-    // Dark background border
+    /// dark background border.
     renderer.DrawRect({ m_x, m_y }, { m_width, m_height }, { 0.08f, 0.08f, 0.08f, 1.0f });
 
-    // Inner inset rect as the lamp face
+    /// inner inset rect as the lamp face.
     constexpr float inset = 2.0f;
     glm::vec4 color = ColorForState();
     float     glow = GlowForState();
 
-    // When OFF, draw a dim base color so the lamp shape is visible
     glm::vec4 baseColor = (m_state == LampState::OFF)
         ? glm::vec4(0.06f, 0.06f, 0.06f, 1.0f)
         : color;
