@@ -28,10 +28,10 @@ public:
     tresult PLUGIN_API getState(IBStream* state)                      override;
 
 protected:
-    /* MIDI stuff */
+    /// midi things.
     void processMIDIInput(Vst::ProcessData& data);
 
-    /* Rhythm stuff */
+    /// rythm.
     void updateRhythmPatterns();
     int32 denormalizeRhythm(Vst::ParamValue normalized, int32 min, int32 max);
     int getStepSamples(int noteIndex, int barSamples) const;
@@ -39,31 +39,26 @@ protected:
     double applySwing(double posInStep, int64 stepIndex, double stepSampD) const;
     float denorm(ParamID id) const;
 
-    /* events */
+
     void sendNoteOn(Vst::ProcessData& data, int pitch, int sampleOffset, float vel);
     void sendNoteOff(Vst::ProcessData& data, int pitch, int sampleOffset);
     void sendAllNotesOff(Vst::ProcessData& data, int sampleOffset = 0);
     
-    /* velocity */
     float computeVelocity() const;
 
-    /* state */
     void reset();
 
-    /* Rhythm state */
     std::array<int, 4>   rhythmPatterns = { 3, 4, 5, 7 };
 
-    /* Chord state */
     std::vector<int>      heldChord;
     std::vector<int>      inputChord;
 
-    /* Playback state */
     std::vector<Steinberg::int32> rhythmCounters;
     std::vector<bool>             noteOnFlags;
     Steinberg::int32              sampleCounter = 0;
     bool                          wasPlaying = false;
 
-    /* params */
+    /// params.
     float paramValues[kParamCount] = {};
     float velocity = 0.8f;
     float noteLength = 0.5f;
@@ -73,7 +68,6 @@ protected:
 
     std::atomic<bool> paramsChanged{ false };
 
-    /* trigger feedback */
     std::array<bool, 4> m_firedThisBlock = {};
 };
 

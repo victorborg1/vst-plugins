@@ -61,22 +61,22 @@ inline const ParamInfo& getParamInfo(ParamID id)
 {
     static const ParamInfo infos[] = {
 
-        // Rhythm (1–16)
+        /// rhythms.
         { kParamRhythmA, STR16("R1"), STR16(""), 15, toNormalized(4.0, 1.0, 16.0), 1.0, 16.0 },
         { kParamRhythmB, STR16("R2"), STR16(""), 15, toNormalized(4.0, 1.0, 16.0), 1.0, 16.0 },
         { kParamRhythmC, STR16("R3"), STR16(""), 15, toNormalized(4.0, 1.0, 16.0), 1.0, 16.0 },
         { kParamRhythmD, STR16("R4"), STR16(""), 15, toNormalized(4.0, 1.0, 16.0), 1.0, 16.0 },
 
-        // Continuous
+        // continuous.
         { kParamNoteLength, STR16("GATE"), STR16("%"), 0, toNormalized(0.5, 0.1, 1.0), 0.1, 1.0 },
         { kParamVelocity,   STR16("VEL"),  STR16(""),  0, 0.8,                          0.0, 1.0 },
 
-        // Bar size (discrete 0–4)
+        // bar size.
         { kParamBarSize, STR16("BAR"), STR16(""), 4, toNormalized(2.0, 0.0, 4.0), 0.0, 4.0 },
 
         { kParamSwing, STR16("SWING"), STR16(""), 0, 0.0, 0.0, 1.0 },
 
-        // Triggers (binary)
+        /// triggers, this is really stupid. should use the same transfer as newer plugins.!!
         { kParamTriggerA, STR16("Trigger A"), STR16(""), 1, 0.0, 0.0, 1.0 },
         { kParamTriggerB, STR16("Trigger B"), STR16(""), 1, 0.0, 0.0, 1.0 },
         { kParamTriggerC, STR16("Trigger C"), STR16(""), 1, 0.0, 0.0, 1.0 },

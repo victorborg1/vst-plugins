@@ -29,10 +29,10 @@ tresult PLUGIN_API Processor::initialize(FUnknown* context) {
 tresult PLUGIN_API Processor::terminate()        { return AudioEffect::terminate(); }
 tresult PLUGIN_API Processor::setActive(TBool s) { return AudioEffect::setActive(s); }
 
-uint32 PLUGIN_API Processor::getProcessContextRequirements() {
-    return Vst::IProcessContextRequirements::kNeedTempo
-         | Vst::IProcessContextRequirements::kNeedProjectTimeMusic;
-}
+//uint32 PLUGIN_API Processor::getProcessContextRequirements() {
+//    return Vst::IProcessContextRequirements::kNeedTempo
+//         | Vst::IProcessContextRequirements::kNeedProjectTimeMusic;
+//}
 
 tresult PLUGIN_API Processor::setupProcessing(Vst::ProcessSetup& newSetup) {
     tresult r = AudioEffect::setupProcessing(newSetup);

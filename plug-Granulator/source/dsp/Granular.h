@@ -1,4 +1,3 @@
-// Granular.h
 #pragma once
 #include <vector>
 #include <array>

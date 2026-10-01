@@ -1,4 +1,3 @@
-// Granular.cpp
 #include "Granular.h"
 
 namespace Steinberg {

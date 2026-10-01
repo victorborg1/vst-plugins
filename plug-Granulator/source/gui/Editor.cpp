@@ -25,7 +25,7 @@ namespace oscilleon::gui {
         m_assetManager = std::make_unique<AssetManager>();
         m_assetManager->Init();
         m_assetManager->LoadFont("jb-default.ttf", "Widgets", 20);
-        m_assetManager->LoadFont("jb-default.ttf", "Labels", 45); // header
+        m_assetManager->LoadFont("jb-default.ttf", "Labels", 45); /// header
 
         m_renderer = std::make_unique<Renderer>();
         m_renderer->SetAssetManager(m_assetManager.get());
@@ -54,15 +54,15 @@ namespace oscilleon::gui {
         m_layout->SetRowHeight(2, GridUnit::Fraction(1));
         m_layout->SetRowHeight(3, GridUnit::Fraction(1));
 
-        //m_layout->SetPadding(5, 5);
+        ///m_layout->SetPadding(5, 5);
         m_layout->SetSpacing(1, 1);
 
 
-        const glm::vec4 waveColor   { 0.85f, 0.90f, 0.95f, 1.0f }; // soft white-blue
+        const glm::vec4 waveColor   { 0.85f, 0.90f, 0.95f, 1.0f }; /// whiteish
         const glm::vec4 gridColor   { 0.18f, 0.22f, 0.28f, 1.0f };
-        const glm::vec4 grainColor  { 0.10f, 0.70f, 1.00f, 1.0f }; // electric blue
-        const glm::vec4 utilColor   { 0.35f, 0.55f, 0.75f, 1.0f }; // muted blue
-        const glm::vec4 writeColor  { 0.20f, 0.85f, 1.00f, 1.0f }; // bright cyan
+        const glm::vec4 grainColor  { 0.10f, 0.70f, 1.00f, 1.0f }; /// some blue
+        const glm::vec4 utilColor   { 0.35f, 0.55f, 0.75f, 1.0f }; /// some muted blue
+        const glm::vec4 writeColor  { 0.20f, 0.85f, 1.00f, 1.0f }; /// cyan
 
         struct ParamLayout {
             Steinberg::oscilleon::ParamID   id;

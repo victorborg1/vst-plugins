@@ -1,5 +1,8 @@
 # My VST plugins
 
+# Build Process
+its basically the same for GNU/linux and Windows.\
+clone the repository, and then build:
 
 ## Linux
 

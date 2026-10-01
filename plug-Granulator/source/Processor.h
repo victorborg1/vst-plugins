@@ -1,5 +1,4 @@
-﻿// Processor.h (unchanged but included for completeness)
-#pragma once
+﻿#pragma once
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "Parameter.h"
 #include "dsp/Granular.h"

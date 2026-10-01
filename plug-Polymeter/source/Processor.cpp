@@ -83,7 +83,6 @@ tresult PLUGIN_API Processor::getState(IBStream* state)
     return kResultOk;
 }
 
-/* MIDI */
 void Processor::sendNoteOn(Vst::ProcessData& data, int pitch, int sampleOffset, float vel)
 {
     Vst::Event on{};
@@ -118,7 +117,6 @@ void Processor::sendAllNotesOff(Vst::ProcessData& data, int sampleOffset)
     }
 }
 
-/* Polymeter helpers */
 float Processor::computeVelocity() const
 {
     float vel = std::pow(velocity, 1.5f);
@@ -176,7 +174,7 @@ void Processor::reset()
     rhythmCounters.assign(rhythmCounters.size(), 0);
 }
 
-/* MIDI input */
+/// midi input.
 void Processor::processMIDIInput(Vst::ProcessData& data)
 {
     if (!data.inputEvents) return;
@@ -232,13 +230,11 @@ void Processor::processMIDIInput(Vst::ProcessData& data)
     }
 }
 
-/*------------------------------------------------------------------------*/
 tresult PLUGIN_API Processor::process(Vst::ProcessData& data)
 {
     if (data.numSamples == 0 || !data.outputEvents || !data.processContext)
         return kResultOk;
 
-    // --- Input parameter changes ---
     if (data.inputParameterChanges) {
         int32 numParams = data.inputParameterChanges->getParameterCount();
         for (int32 i = 0; i < numParams; ++i)
@@ -308,7 +304,6 @@ tresult PLUGIN_API Processor::process(Vst::ProcessData& data)
     }
 
 
-    // lamp params , should be using notify 
     if (data.outputParameterChanges)
     {
         static const Vst::ParamID triggerIDs[4] = {

@@ -6,6 +6,7 @@
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include <array>
+#include <string>
 
 namespace Steinberg {
 namespace oscilleon {

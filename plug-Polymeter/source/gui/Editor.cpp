@@ -65,7 +65,7 @@ void Editor::CreateLayout() {
     m_toolbar->SetPluginName("Polymeter");
     m_layout->Add(m_toolbar.get(), 0, 0, kCols, 1);
 
-    // Trigger lamps
+    /// trigger the lamps, again, really stupid solution needs a fix.
     for (int i = 0; i < 4; ++i) {
         auto lamp = std::make_unique<Lamp>();
         lamp->SetOnColor(triggerColor);
@@ -74,7 +74,7 @@ void Editor::CreateLayout() {
         m_lamps.push_back(std::move(lamp));
     }
 
-    // Rhythm knobs
+    /// rhythm knobs.
     const Steinberg::oscilleon::ParamID rhythmParams[] = {
         kParamRhythmA, kParamRhythmB, kParamRhythmC, kParamRhythmD
     };
@@ -112,7 +112,7 @@ void Editor::CreateLayout() {
         m_paramIds.push_back(id);
     }
 
-    // Global knobs
+    /// global knobs.
     const Steinberg::oscilleon::ParamID globalParams[] = {
         kParamNoteLength, kParamVelocity, kParamBarSize, kParamSwing
     };

@@ -31,7 +31,7 @@ public:
     tresult PLUGIN_API process(Vst::ProcessData& data)                override;
     tresult PLUGIN_API setState(IBStream* state)                      override;
     tresult PLUGIN_API getState(IBStream* state)                      override;
-    uint32 PLUGIN_API getProcessContextRequirements()                 override;
+    //uint32 PLUGIN_API getProcessContextRequirements()                 override;
 
 private:
     void  buildParams();
