@@ -66,7 +66,6 @@ void GrainView::SpawnGrain() {
     std::uniform_real_distribution<float> coinFlip(0.f, 1.f);
     std::uniform_real_distribution<float> panDist(-0.3f, 0.3f);
 
-    // Mirror processor: grain reads at writePos - position - scanOffset
     float delay  = std::clamp(m_smoothPosition + m_scanOffset + sprayDist(m_rng), 0.01f, 0.99f);
     float bufPos = Wrap01(m_smoothWritePosNorm - delay);
 
@@ -84,55 +83,18 @@ void GrainView::SpawnGrain() {
 }
 
 void GrainView::Update(float dt) {
-    // -------------------------------------------------------------------------
-    // Flash decay
-    // -------------------------------------------------------------------------
     if (m_flashIntensity > 0.f) {
         m_flashIntensity -= dt * 4.f;
         if (m_flashIntensity < 0.f) m_flashIntensity = 0.f;
     }
-
-    // -------------------------------------------------------------------------
-    // Write head — pure lerp toward the ground-truth target.
-    //
-    // We deliberately do NOT dead-reckon (+= dt/bufferSize) here. Dead-reckoning
-    // causes the smooth head to run ahead of the actual waveform data snapshot,
-    // so the line appears to sit just past the fresh data boundary. By only
-    // lerping, the smooth head never overshoots, and both the line and the
-    // waveform age gradient stay perfectly in sync.
-    //
-    // The lerp speed (dt * 22) means the head reaches any new target in ~3 frames
-    // at 60 fps — visually instant, but without the hard jump of a direct assign.
-    // -------------------------------------------------------------------------
     if (m_hasRealWave) {
         float drift = CircleDiff(m_targetWritePosNorm, m_smoothWritePosNorm);
         m_smoothWritePosNorm = Wrap01(m_smoothWritePosNorm + drift * std::min(dt * 22.f, 1.f));
     }
-
-    // -------------------------------------------------------------------------
-    // Position knob — fast lerp so dragging feels live but not snappy
-    // -------------------------------------------------------------------------
     m_smoothPosition += (m_targetPosition - m_smoothPosition) * std::min(dt * 14.f, 1.f);
-
-    // -------------------------------------------------------------------------
-    // Scan offset — continuous rate, every frame.
-    //
-    // Relationship to m_increment:
-    //   > 0  →  offset increases  →  scanHead = readPos - offset moves LEFT
-    //                                 (deeper into the past, right → left)
-    //   < 0  →  offset decreases  →  scanHead moves RIGHT
-    //                                 (toward the write head, left → right)
-    //   = 0  →  stationary
-    //
-    // Full buffer traversal time = bufferSizeSec / |increment|
-    // -------------------------------------------------------------------------
     if (!m_freeze) {
         m_scanOffset = Wrap01(m_scanOffset + m_increment * dt / m_bufferSizeSec);
     }
-
-    // -------------------------------------------------------------------------
-    // Grain spawner
-    // -------------------------------------------------------------------------
     float interval = 1.f / std::max(m_density, 0.1f);
     m_spawnTimer -= dt;
     if (m_spawnTimer <= 0.f && !m_freeze) {
@@ -140,10 +102,6 @@ void GrainView::Update(float dt) {
         m_spawnTimer += interval;
         if (m_spawnTimer < 0.f) m_spawnTimer = 0.f;
     }
-
-    // -------------------------------------------------------------------------
-    // Advance active grains
-    // -------------------------------------------------------------------------
     for (auto& g : m_grains) {
         if (!g.active) continue;
         g.bufferPosNorm = Wrap01(g.bufferPosNorm + g.rate * dt);
@@ -163,22 +121,15 @@ void GrainView::Render(Renderer& renderer) {
     const float iH     = m_height - 2.f * margin;
     const float midY   = iY + iH * 0.5f;
 
-    // -------------------------------------------------------------------------
-    // Waveform
-    // Bins just behind m_smoothWritePosNorm are brightest (freshest audio).
-    // Both the gradient AND the line use the same m_smoothWritePosNorm value,
-    // so they are always perfectly aligned.
-    // -------------------------------------------------------------------------
     if (m_hasRealWave) {
         float writeBinF = m_smoothWritePosNorm * float(kWaveSteps);
 
         for (int i = 0; i < kWaveSteps; ++i) {
             float x = iX + (float(i) + 0.5f) / float(kWaveSteps) * iW;
 
-            // How many bins behind the write head is this bin?
             float dist = writeBinF - float(i);
             if (dist < 0.f) dist += float(kWaveSteps);
-            float age = dist / float(kWaveSteps);  // 0 = just written, 1 = about to overwrite
+            float age = dist / float(kWaveSteps);  
 
             float brightness = 0.18f + (1.f - age) * 0.82f;
             float alphaL     = 0.20f + (1.f - age) * 0.60f;
@@ -199,16 +150,12 @@ void GrainView::Render(Renderer& renderer) {
             renderer.DrawLine({ x, midY - ampR }, { x, midY + ampR }, waveCol, 1.0f, 0.f);
         }
 
-        // Write head line — same value as the age gradient above, always in sync
         float writeX = BufPosToX(m_smoothWritePosNorm, iX, iW);
         renderer.DrawLine({ writeX, iY }, { writeX, iY + iH },
             { m_writeHeadColor.r, m_writeHeadColor.g, m_writeHeadColor.b, 0.80f },
             1.8f, 8.f);
     }
 
-    // -------------------------------------------------------------------------
-    // Grid
-    // -------------------------------------------------------------------------
     constexpr int kGrid = 6;
     for (int t = 1; t < kGrid; ++t) {
         float tx = iX + float(t) / float(kGrid) * iW;
@@ -218,9 +165,6 @@ void GrainView::Render(Renderer& renderer) {
     renderer.DrawLine({ iX, midY }, { iX + iW, midY },
         { m_gridColor.r * 1.4f, m_gridColor.g * 1.4f, m_gridColor.b * 1.6f, 0.30f }, 0.6f, 0.f);
 
-    // -------------------------------------------------------------------------
-    // Position (read) head — write head minus the smoothed position knob value
-    // -------------------------------------------------------------------------
     float readPosNorm = Wrap01(m_smoothWritePosNorm - m_smoothPosition);
     float posPx       = BufPosToX(readPosNorm, iX, iW);
 
@@ -238,19 +182,11 @@ void GrainView::Render(Renderer& renderer) {
     renderer.DrawLine({ posPx, iY }, { posPx, iY + iH },
         { m_primaryColor.r, m_primaryColor.g, m_primaryColor.b, 0.28f }, 1.0f, 0.f);
 
-    // -------------------------------------------------------------------------
-    // Scan head — readPos offset by the continuously-advancing scan offset
-    //   increment > 0: scanOffset increases → scanHead < readPosNorm → moves LEFT
-    //   increment < 0: scanOffset decreases → scanHead > readPosNorm → moves RIGHT
-    // -------------------------------------------------------------------------
     float scanPosNorm = Wrap01(readPosNorm - m_scanOffset);
     float scanPx      = BufPosToX(scanPosNorm, iX, iW);
     renderer.DrawLine({ scanPx, iY }, { scanPx, iY + iH },
         { m_primaryColor.r, m_primaryColor.g, m_primaryColor.b, 0.58f }, 1.6f, 12.f);
 
-    // -------------------------------------------------------------------------
-    // Grain activity segments
-    // -------------------------------------------------------------------------
     constexpr int kSegments = 32;
     float segW = iW / float(kSegments);
 
@@ -280,17 +216,11 @@ void GrainView::Render(Renderer& renderer) {
             { base.r, base.g, base.b, energy * 0.9f }, 1.5f, 0.f);
     }
 
-    // -------------------------------------------------------------------------
-    // Buffer-clear flash
-    // -------------------------------------------------------------------------
     if (m_flashIntensity > 0.f)
         renderer.DrawRect({ m_x, m_y }, { m_width, m_height },
             { m_writeHeadColor.r, m_writeHeadColor.g, m_writeHeadColor.b,
               m_flashIntensity * 0.3f });
 
-    // -------------------------------------------------------------------------
-    // Grain count label
-    // -------------------------------------------------------------------------
     int activeCount = 0;
     for (const auto& g : m_grains) if (g.active) ++activeCount;
 
